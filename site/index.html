@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Architect's Path — Lv1 → Lv999</title>
+  <meta name="description" content="An isometric pixel JRPG quest log for the path from beginner coder to AI Architect (Lv1 to Lv999)." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="crt"></div>
+  <div class="scanlines"></div>
+
+  <header class="topbar">
+    <h1 class="logo">&#9650; ARCHITECT&#39;S PATH</h1>
+    <p class="subtitle">An AI quest log for builders &middot; Lv 1 &rarr; Lv 999</p>
+  </header>
+
+  <main class="hud">
+
+    <section class="panel panel-stats">
+      <h2>HERO</h2>
+      <div class="hero-frame">
+        <svg id="hero-sprite" class="hero-sprite" viewBox="0 0 16 24" shape-rendering="crispEdges" aria-hidden="true"></svg>
+      </div>
+      <div class="stat"><span class="label">NAME</span><span class="value" id="hero-name">Wanderer</span></div>
+      <div class="stat"><span class="label">CLASS</span><span class="value" id="rank-name">Apprentice Coder</span></div>
+      <div class="stat"><span class="label">LV</span><span class="value"><span id="level-num">1</span> / 999</span></div>
+
+      <div class="bar"><div class="bar-fill exp" id="exp-fill" style="width:5%"></div><span class="bar-label" id="exp-text">5 / 100 EXP</span></div>
+      <div class="bar"><div class="bar-fill hp"  id="hp-fill"  style="width:100%"></div><span class="bar-label" id="hp-text">120 / 120 HP</span></div>
+      <div class="bar"><div class="bar-fill mp"  id="mp-fill"  style="width:80%"></div><span class="bar-label" id="mp-text">64 / 80 MP</span></div>
+
+      <div class="lv-control">
+        <label for="lv-input">Set hero level</label>
+        <input id="lv-input" type="range" min="1" max="999" value="1" step="1" />
+        <input id="lv-number" type="number" min="1" max="999" value="1" />
+      </div>
+
+      <div class="inv">
+        <h3>INVENTORY</h3>
+        <ul id="inventory">
+          <li>&#9000; Keyboard +1</li>
+          <li>&#128220; Git Scroll</li>
+          <li>&#129514; Curiosity Vial</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel panel-world">
+      <h2>WORLDMAP &middot; REGION I</h2>
+      <div class="world">
+        <div class="iso" id="iso">
+          <div class="iso-grid"   id="iso-grid"></div>
+          <div class="iso-nodes"  id="iso-nodes"></div>
+          <div class="iso-hero"   id="iso-hero"></div>
+        </div>
+      </div>
+      <div class="dialogbox" id="dialog">
+        <div class="speaker">&#9660; AI MENTOR</div>
+        <p id="dialog-text">Greetings, traveler. Pick a quest from the path or the log to begin.</p>
+      </div>
+    </section>
+
+    <section class="panel panel-quests">
+      <h2>QUEST LOG</h2>
+      <ul class="quest-list" id="quest-list"></ul>
+    </section>
+
+  </main>
+
+  <section class="panel panel-ranks">
+    <h2>RANK CODEX &middot; 15 TITLES</h2>
+    <ol class="ranks" id="ranks"></ol>
+  </section>
+
+  <footer class="bottombar">
+    <span>click a node or quest to read &middot; drag the LV slider to time-travel &middot; press &#8593;/&#8595; to scroll quests</span>
+  </footer>
+
+  <script src="quests.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
