@@ -1,27 +1,27 @@
-/* ARCHITECT'S PATH — pixel JRPG theme */
+/* THE AI PATH — pixel JRPG theme + Minecraft-style voxel character */
 
 :root {
-  --bg:       #0b0b1a;
-  --panel:    #1a1b2e;
-  --panel-2:  #14152a;
-  --border:   #4a3a8a;
-  --border-hi:#8b6cff;
-  --text:     #e8e3ff;
-  --muted:    #9a98c4;
-  --gold:     #ffcb3d;
-  --gold-dk:  #6b3a00;
-  --hp:       #ff4d6d;
-  --mp:       #6cdcff;
-  --exp:      #6cff8a;
-  --magic:    #c490ff;
-  --grass-1:  #4ea866;
-  --grass-2:  #3a8c50;
-  --grass-dk: #1f5530;
-  --path-1:   #c39158;
-  --path-2:   #a4774a;
-  --path-dk:  #6b4a2a;
-  --water:    #4d8fc9;
-  --stone:    #6b6b85;
+  --bg:        #0b0b1a;
+  --panel:     #1a1b2e;
+  --panel-2:   #14152a;
+  --border:    #4a3a8a;
+  --border-hi: #8b6cff;
+  --text:      #e8e3ff;
+  --muted:     #9a98c4;
+  --gold:      #ffcb3d;
+  --gold-dk:   #6b3a00;
+  --hp:        #ff4d6d;
+  --mp:        #6cdcff;
+  --exp:       #6cff8a;
+  --magic:     #c490ff;
+  --grass-1:   #4ea866;
+  --grass-2:   #3a8c50;
+  --grass-dk:  #1f5530;
+  --path-1:    #c39158;
+  --path-2:    #a4774a;
+  --path-dk:   #6b4a2a;
+  --water:     #4d8fc9;
+  --stone:     #6b6b85;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,10 +65,10 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
 /* --- layout --- */
 .hud {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 300px 1fr 340px;
   gap: 18px;
   padding: 18px;
-  max-width: 1400px;
+  max-width: 1480px;
   margin: 0 auto;
 }
 @media (max-width: 1100px) { .hud { grid-template-columns: 1fr; } }
@@ -97,11 +97,14 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
   letter-spacing: 1px;
 }
 
-/* --- stats panel --- */
+/* ============================================================== */
+/*  Minecraft-style voxel character                                */
+/* ============================================================== */
+
 .hero-frame {
   background: #0e0e22;
   border: 2px solid var(--border);
-  height: 200px;
+  height: 240px;
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 12px;
   position: relative;
@@ -114,20 +117,89 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
     radial-gradient(circle at 50% 80%, rgba(255, 203, 61, 0.18), transparent 60%),
     repeating-linear-gradient(0deg, #0e0e22 0 2px, #0c0c1d 2px 4px);
 }
-.hero-sprite {
-  width: 110px;
-  height: auto;
-  image-rendering: pixelated;
-  filter: drop-shadow(2px 3px 0 #000);
+.mc-stage {
   position: relative;
+  width: 100%; height: 100%;
+  perspective: 720px;
+  display: flex; align-items: center; justify-content: center;
   z-index: 1;
-  animation: bob 1.2s steps(2) infinite;
 }
-@keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-3px); }
+.mc-char {
+  position: relative;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-12deg) rotateY(-22deg);
+  animation: mc-spin 6s ease-in-out infinite alternate;
+}
+@keyframes mc-spin {
+  from { transform: rotateX(-12deg) rotateY(-30deg); }
+  to   { transform: rotateX(-12deg) rotateY( 30deg); }
+}
+.mc-shadow {
+  position: absolute; left: 50%; bottom: 22px;
+  width: 80px; height: 14px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%);
+  transform: translateX(-50%);
+  filter: blur(1px);
+  z-index: 0;
 }
 
+.cube { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; }
+.cube .face {
+  position: absolute;
+  left: 0; top: 0;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.28);
+}
+/* lit/shaded sides for that voxel feel */
+.cube .face-top    { filter: brightness(1.18); }
+.cube .face-bottom { filter: brightness(0.55); }
+.cube .face-left   { filter: brightness(0.78); }
+.cube .face-right  { filter: brightness(0.92); }
+
+/* face-on-the-head detail (eyes + mouth) drawn over the inline backgroundColor */
+.face-head-front {
+  background-image:
+    radial-gradient(circle at 30% 36%, #1a0d28 0 1.6px, transparent 2.4px),
+    radial-gradient(circle at 70% 36%, #1a0d28 0 1.6px, transparent 2.4px),
+    radial-gradient(ellipse 3px 1.4px at 50% 70%, #5a2a2a, transparent);
+}
+.cape {
+  /* a thin rectangle behind the torso */
+  background:
+    linear-gradient(180deg, var(--cape-fill, #c490ff), var(--cape-fill-dk, #6e3ec4));
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
+}
+.crown {
+  background: linear-gradient(180deg, #ffe066, #ffcb3d);
+  box-shadow: inset 0 0 0 1px rgba(80,40,0,0.5);
+}
+.halo {
+  position: absolute; left: 50%; top: 50%;
+  width: 70px; height: 14px;
+  border: 3px solid var(--gold);
+  border-radius: 50%;
+  transform: translate(-35px, -110px) rotateX(70deg);
+  box-shadow: 0 0 18px var(--gold);
+  pointer-events: none;
+}
+.companion {
+  background: linear-gradient(180deg, #6cdcff, #2c6dbf);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 0 0 8px #6cdcff;
+}
+
+/* aura on max level */
+.mc-char.aura::after {
+  content: "";
+  position: absolute; left: 0; top: 0;
+  width: 0; height: 0;
+  box-shadow: 0 0 60px 24px rgba(255, 203, 61, 0.45);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* --- HUD stats --- */
 .stat {
   display: flex; justify-content: space-between;
   padding: 6px 4px;
@@ -253,7 +325,6 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
     radial-gradient(1px 1px at 40% 80%, var(--path-2) 99%, transparent);
 }
 
-/* tiny 3D tree on grass tiles flagged with .has-tree */
 .tile.has-tree::before {
   content: "";
   position: absolute;
@@ -278,7 +349,7 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
 }
 .node.locked   { background: var(--stone); box-shadow: none; opacity: 0.55; animation: none; }
 .node.complete { background: var(--exp); animation-name: pulse-exp; }
-.node.boss     { background: var(--hp);  width: 30px; height: 30px;
+.node.boss     { background: var(--hp); width: 30px; height: 30px;
                  transform: translate(15px, 15px) translateZ(44px) rotateX(-58deg) rotateZ(45deg);
                  animation-name: pulse-hp; }
 .node.active   { outline: 2px solid #fff; outline-offset: 2px; }
@@ -289,9 +360,9 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
 
 .iso-hero {
   position: absolute;
-  width: 28px; height: 42px;
+  width: 36px; height: 56px;
   pointer-events: none;
-  transform: translate(16px, 4px) translateZ(48px) rotateX(-58deg) rotateZ(45deg);
+  transform: translate(12px, -8px) translateZ(50px) rotateX(-58deg) rotateZ(45deg);
   transition: left 0.5s ease, top 0.5s ease;
   filter: drop-shadow(2px 3px 0 #000);
 }
@@ -304,7 +375,7 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
   border: 3px solid var(--border-hi);
   padding: 12px 14px 18px;
   position: relative;
-  min-height: 90px;
+  min-height: 110px;
 }
 .dialogbox::after {
   content: "\25BC";
@@ -319,12 +390,22 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
   font-size: 10px;
   margin-bottom: 6px;
 }
-#dialog-text { white-space: pre-wrap; line-height: 1.35; }
+#dialog-text { white-space: pre-wrap; line-height: 1.4; }
+#dialog-text .d-h { color: var(--gold); font-weight: bold; }
+#dialog-text .d-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  margin: 2px 4px 2px 0;
+  color: var(--mp);
+  background: #15163a;
+}
 
 /* --- quest log --- */
 .quest-list {
   list-style: none;
-  max-height: 620px;
+  max-height: 660px;
   overflow-y: auto;
   padding-right: 6px;
 }
@@ -334,7 +415,7 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
 
 .quest {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 56px 1fr;
   gap: 10px;
   padding: 8px;
   border: 2px solid #2c2d4a;
@@ -355,22 +436,77 @@ h1, h2, h3, h4 { font-family: 'Press Start 2P', 'Courier New', monospace; font-w
   color: var(--gold);
 }
 .quest h4 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
-.quest p  { font-size: 14px; color: var(--muted); }
-.quest .tags { margin-top: 4px; }
-.quest .tag  {
+.quest .tagline { font-size: 14px; color: var(--magic); margin-bottom: 4px; }
+.quest .save { color: var(--exp); font-size: 14px; }
+.quest .tools { margin-top: 4px; }
+.quest .tool {
   display: inline-block;
   font-size: 12px;
   padding: 1px 6px;
   border: 1px solid var(--border);
-  margin-right: 3px;
+  margin: 2px 3px 0 0;
   color: var(--mp);
   background: #0e0e22;
 }
 
+/* --- talk panel (30 min outline) --- */
+.panel-talk {
+  max-width: 1480px;
+  margin: 18px auto 0;
+}
+.talk-intro { color: var(--muted); margin-bottom: 12px; font-size: 16px; }
+.talk-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  counter-reset: talk;
+}
+.talk-card {
+  background: #0e0e22;
+  border: 2px solid var(--border);
+  padding: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.talk-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.talk-card.active { border-color: var(--magic); }
+.talk-card .stop {
+  position: absolute; right: 10px; top: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--muted);
+}
+.talk-card h4 { font-size: 12px; color: var(--gold); margin-bottom: 6px; padding-right: 60px; }
+.talk-card .lv-pill {
+  display: inline-block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  background: var(--magic);
+  color: #1a0d28;
+  padding: 2px 5px;
+  margin-bottom: 6px;
+}
+.talk-card .tagline { color: var(--magic); margin-bottom: 4px; font-size: 16px; }
+.talk-card .save  { color: var(--exp); font-size: 14px; }
+.talk-card ul { margin-top: 6px; padding-left: 16px; font-size: 14px; color: var(--text); }
+.talk-card ul li { margin-bottom: 2px; }
+.talk-card .tools { margin-top: 6px; }
+.talk-card .tool {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  margin: 2px 3px 0 0;
+  color: var(--mp);
+  background: #15163a;
+}
+
 /* --- ranks codex --- */
 .panel-ranks {
-  max-width: 1400px;
-  margin: 0 auto 24px;
+  max-width: 1480px;
+  margin: 18px auto 24px;
 }
 .ranks {
   list-style: none;

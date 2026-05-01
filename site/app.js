@@ -1,73 +1,244 @@
-/* ARCHITECT'S PATH — interactivity */
+/* THE AI PATH — interactivity, voxel character, talk outline */
 (() => {
-  const GRID = 8;            // 8x8 isometric grid
-  const TILE = 60;           // px per tile (pre-rotation)
+  const GRID = 8;
+  const TILE = 60;
 
-  // ---------- pixel hero sprite ----------
-  // 16x24 pixel art string. Letters map to colors.
-  const HERO_PIXELS = [
-    "       GG       ", // 0  hat gem
-    "      pPPp      ", // 1
-    "     pPPPPp     ", // 2  pointed hat
-    "    pPPPPPPp    ", // 3
-    "   bbbbbbbbbb   ", // 4  hat brim
-    "     ssssss     ", // 5  forehead
-    "     SssssS     ", // 6  eyes (left/right)
-    "     ssssss     ", // 7  cheeks
-    "    cccccccc    ", // 8  collar/cape top
-    "    cmmmmmmc    ", // 9  shirt
-    "    cmmGGmmc    ", //10  belt buckle gem
-    "    cmmmmmmc    ", //11
-    "   cBBBBBBBBc   ", //12  belt
-    "   cmmmmmmmmc   ", //13
-    "  ccmmmmmmmmcc  ", //14  cape spreading
-    "  cmmmmmmmmmmc  ", //15
-    " cccmmmmmmmmccc ", //16
-    " ccccmmmmmmcccc ", //17
-    "    pppp pppp   ", //18  legs
-    "    pppp pppp   ", //19
-    "    pppp pppp   ", //20
-    "    pppp pppp   ", //21
-    "   kkkkk kkkkk  ", //22  boots
-    "   kkkkk kkkkk  ", //23
-  ];
-  const PALETTE = {
-    G: "#ffcb3d", // gold gem
-    P: "#8b6cff", // hat light
-    p: "#5a3aa6", // hat dark / pant
-    b: "#3d2a78", // hat brim
-    s: "#f3c191", // skin
-    S: "#241733", // eye
-    e: "#f3c191", // skin around eye (same)
-    c: "#4a2d8a", // cape outline
-    m: "#8b6cff", // shirt/cape light
-    B: "#1a0d28", // belt strap
-    k: "#2a1810", // boots
-  };
+  // ---------- outfit progression (level -> palette + accessories) ----------
+  function outfitFor(level) {
+    const o = {
+      skin:  "#f3c191",
+      hair:  "#5a2d0c",
+      shirt: "#d8d6e0",  // plain white tee
+      pants: "#2c4a8a",
+      shoe:  "#1a0d28",
+      cape:  null,
+      accessories: [],
+      label: "Plain explorer",
+    };
+    const inv = ["\u{1F464} Plain explorer"];
 
-  function buildHeroSVG() {
-    const rects = [];
-    HERO_PIXELS.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) {
-        const ch = row[x];
-        if (ch === " ") continue;
-        const fill = PALETTE[ch];
-        if (!fill) continue;
-        rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`);
-      }
-    });
-    return rects.join("");
+    if (level >= 11) {
+      o.shirt = "#6cdcff";
+      inv.push("\u{1F4D3} Notebook in hand");
+      o.label = "Daily AI user";
+    }
+    if (level >= 31) {
+      o.accessories.push("hat");
+      inv.push("\u{1F3A9} Adventurer's cap");
+      o.label = "Power prompter";
+    }
+    if (level >= 81) {
+      o.shirt = "#c490ff";
+      inv.push("\u{1F9BA} Workshop apron");
+      o.label = "Workflow booster";
+    }
+    if (level >= 151) {
+      o.cape = "#6e3ec4";
+      o.accessories.push("cape");
+      inv.push("\u{1F9E3} Mentor's cape");
+      o.label = "Knowledge keeper";
+    }
+    if (level >= 301) {
+      o.accessories.push("companion");
+      inv.push("\u{1F916} AI companion");
+      o.label = "Workflow designer";
+    }
+    if (level >= 501) {
+      o.shirt = "#ffcb3d";
+      o.pants = "#7a5500";
+      inv.push("\u{1F6E1}  Gold-trimmed armor");
+      o.label = "Team orchestrator";
+    }
+    if (level >= 801) {
+      o.accessories.push("crown");
+      inv.push("\u{1F451} Architect's crown");
+      o.label = "AI-native leader";
+    }
+    if (level >= 999) {
+      o.accessories.push("halo");
+      o.accessories.push("aura");
+      inv.push("\u{2728} Halo of mastery");
+      o.label = "The Future of Work";
+    }
+    o.inventory = inv;
+    return o;
   }
-  document.getElementById("hero-sprite").innerHTML = buildHeroSVG();
-  // re-use the same sprite on the worldmap hero
-  const isoHero = document.getElementById("iso-hero");
-  isoHero.innerHTML = `<svg viewBox="0 0 16 24" shape-rendering="crispEdges">${buildHeroSVG()}</svg>`;
+
+  // ---------- 3D cube factory (Minecraft-style) ----------
+  function cube(w, h, d, faces, opts = {}) {
+    const c = document.createElement("div");
+    c.className = "cube" + (opts.cls ? " " + opts.cls : "");
+    function mk(side, fw, fh, t, extra) {
+      const f = document.createElement("div");
+      f.className = "face face-" + side + (extra ? " " + extra : "");
+      f.style.width  = fw + "px";
+      f.style.height = fh + "px";
+      const fill = faces[side];
+      if (fill) f.style.backgroundColor = fill;
+      f.style.transform = t;
+      c.appendChild(f);
+    }
+    mk("front",  w, h, `translateZ(${ d/2}px) translate(${-w/2}px, ${-h/2}px)`, faces.frontClass);
+    mk("back",   w, h, `rotateY(180deg) translateZ(${ d/2}px) translate(${-w/2}px, ${-h/2}px)`);
+    mk("right",  d, h, `rotateY(90deg)  translateZ(${ w/2}px) translate(${-d/2}px, ${-h/2}px)`);
+    mk("left",   d, h, `rotateY(-90deg) translateZ(${ w/2}px) translate(${-d/2}px, ${-h/2}px)`);
+    mk("top",    w, d, `rotateX(-90deg) translateZ(${ h/2}px) translate(${-w/2}px, ${-d/2}px)`);
+    mk("bottom", w, d, `rotateX(90deg)  translateZ(${ h/2}px) translate(${-w/2}px, ${-d/2}px)`);
+    return c;
+  }
+  function place(el, x, y, z) {
+    el.style.position  = "absolute";
+    el.style.left = "0"; el.style.top = "0";
+    el.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
+  }
+
+  // ---------- build the voxel character ----------
+  function buildMCChar(o) {
+    const root = document.getElementById("mc-char");
+    root.innerHTML = "";
+    root.classList.toggle("aura", o.accessories.includes("aura"));
+
+    // head
+    const head = cube(24, 24, 24, {
+      front: o.skin, back: o.hair, left: o.skin, right: o.skin,
+      top: o.hair, bottom: o.skin, frontClass: "face-head-front",
+    });
+    head.style.setProperty("--head-fill", o.skin);
+    place(head, 0, -54, 0);
+    root.appendChild(head);
+
+    // torso
+    const torso = cube(24, 36, 12, {
+      front: o.shirt, back: o.shirt, left: o.shirt,
+      right: o.shirt, top: o.shirt, bottom: o.shirt,
+    });
+    place(torso, 0, -24, 0);
+    root.appendChild(torso);
+
+    // arms
+    const armR = cube(10, 36, 10, {
+      front: o.shirt, back: o.shirt, left: o.shirt,
+      right: o.shirt, top: o.shirt, bottom: o.skin,
+    });
+    place(armR, 17, -24, 0);
+    root.appendChild(armR);
+
+    const armL = cube(10, 36, 10, {
+      front: o.shirt, back: o.shirt, left: o.shirt,
+      right: o.shirt, top: o.shirt, bottom: o.skin,
+    });
+    place(armL, -17, -24, 0);
+    root.appendChild(armL);
+
+    // legs
+    const legR = cube(12, 36, 12, {
+      front: o.pants, back: o.pants, left: o.pants,
+      right: o.pants, top: o.pants, bottom: o.shoe,
+    });
+    place(legR, 6, 12, 0);
+    root.appendChild(legR);
+
+    const legL = cube(12, 36, 12, {
+      front: o.pants, back: o.pants, left: o.pants,
+      right: o.pants, top: o.pants, bottom: o.shoe,
+    });
+    place(legL, -6, 12, 0);
+    root.appendChild(legL);
+
+    // ----- accessories -----
+    if (o.accessories.includes("hat")) {
+      const hat = cube(26, 6, 26, {
+        front: "#5a3aa6", back: "#5a3aa6", left: "#5a3aa6",
+        right: "#5a3aa6", top: "#7a5dd0", bottom: "#3d2a78",
+      });
+      place(hat, 0, -69, 0);
+      root.appendChild(hat);
+      const brim = cube(30, 2, 30, {
+        front: "#3d2a78", back: "#3d2a78", left: "#3d2a78",
+        right: "#3d2a78", top: "#5a3aa6", bottom: "#3d2a78",
+      });
+      place(brim, 0, -64, 0);
+      root.appendChild(brim);
+    }
+    if (o.accessories.includes("cape")) {
+      const cape = cube(22, 44, 1, {
+        front: o.cape || "#6e3ec4", back: o.cape || "#6e3ec4",
+        left: o.cape || "#6e3ec4", right: o.cape || "#6e3ec4",
+        top: o.cape || "#6e3ec4", bottom: "#3a1f6c",
+      }, { cls: "cape-cube" });
+      place(cape, 0, -18, -7);
+      root.appendChild(cape);
+    }
+    if (o.accessories.includes("crown")) {
+      const crown = cube(26, 4, 26, {
+        front: "#ffcb3d", back: "#ffcb3d", left: "#ffcb3d",
+        right: "#ffcb3d", top: "#ffe066", bottom: "#a8761c",
+      }, { cls: "crown-cube" });
+      place(crown, 0, -68, 0);
+      root.appendChild(crown);
+      // four little gold spikes
+      [[-9, 0], [-3, 0], [3, 0], [9, 0]].forEach(([x, z]) => {
+        const spike = cube(3, 5, 3, {
+          front: "#ffe066", back: "#ffe066", left: "#a8761c",
+          right: "#ffe066", top: "#ffe066", bottom: "#a8761c",
+        });
+        place(spike, x, -73, z);
+        root.appendChild(spike);
+      });
+    }
+    if (o.accessories.includes("halo")) {
+      const halo = document.createElement("div");
+      halo.className = "halo";
+      root.appendChild(halo);
+    }
+    if (o.accessories.includes("companion")) {
+      const comp = cube(10, 10, 10, {
+        front: "#6cdcff", back: "#2c6dbf", left: "#3d8fdc",
+        right: "#3d8fdc", top: "#a3e7ff", bottom: "#1a4a8a",
+      }, { cls: "companion" });
+      place(comp, 36, -36, 0);
+      root.appendChild(comp);
+    }
+  }
+
+  // ---------- build the small front-view hero sprite for the map ----------
+  function buildIsoHeroSVG(o) {
+    // viewBox padded for hat/cape/crown
+    const rects = [];
+    const box = (x, y, w, h, c) => rects.push(
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`
+    );
+    // cape behind torso
+    if (o.accessories.includes("cape")) box(7, 8, 10, 18, o.cape || "#6e3ec4");
+    // body
+    // head
+    box(8, 0, 8, 8, o.skin);
+    box(8, 0, 8, 1, o.hair);
+    box(10, 3, 1, 1, "#1a0d28");
+    box(13, 3, 1, 1, "#1a0d28");
+    box(11, 5, 2, 1, "#5a2a2a");
+    // torso
+    box(8, 8, 8, 10, o.shirt);
+    // arms
+    box(4, 8, 4, 4, o.shirt); box(4, 12, 4, 6, o.skin);
+    box(16, 8, 4, 4, o.shirt); box(16, 12, 4, 6, o.skin);
+    // legs
+    box(8, 18, 4, 8, o.pants);
+    box(12, 18, 4, 8, o.pants);
+    box(8, 25, 4, 1, o.shoe); box(12, 25, 4, 1, o.shoe);
+    // accessories
+    if (o.accessories.includes("hat"))   box(7, -3, 10, 4, "#5a3aa6");
+    if (o.accessories.includes("crown")) box(7, -2, 10, 3, "#ffcb3d");
+    if (o.accessories.includes("halo"))  rects.push(`<ellipse cx="12" cy="-2" rx="6" ry="1.4" fill="none" stroke="#ffcb3d" stroke-width="1"/>`);
+    if (o.accessories.includes("aura"))  rects.unshift(`<circle cx="12" cy="13" r="14" fill="#ffcb3d" opacity="0.18"/>`);
+    if (o.accessories.includes("companion")) box(20, 12, 4, 4, "#6cdcff");
+    return `<svg viewBox="-4 -5 32 34" shape-rendering="crispEdges" width="100%" height="100%">${rects.join("")}</svg>`;
+  }
 
   // ---------- isometric world ----------
   const grid  = document.getElementById("iso-grid");
   const nodes = document.getElementById("iso-nodes");
 
-  // place tiles
   for (let y = 0; y < GRID; y++) {
     for (let x = 0; x < GRID; x++) {
       const t = document.createElement("div");
@@ -77,21 +248,18 @@
       if (PATH_TILES.has(`${x},${y}`)) {
         t.classList.add("path");
       } else if (((x * 7 + y * 3) % 11) === 0) {
-        // sparse trees on grass tiles, deterministic
         t.classList.add("has-tree");
       }
       grid.appendChild(t);
     }
   }
 
-  // place quest nodes
   QUESTS.forEach((q, i) => {
     const n = document.createElement("button");
-    n.className = "node";
-    if (q.boss) n.classList.add("boss");
+    n.className = "node" + (q.boss ? " boss" : "");
     n.style.left = (q.map.x * TILE) + "px";
     n.style.top  = (q.map.y * TILE) + "px";
-    n.title = `Lv ${q.lv} · ${q.title}`;
+    n.title = `Lv ${q.lv} — ${q.title}`;
     n.dataset.idx = String(i);
     n.addEventListener("click", () => selectQuest(i));
     nodes.appendChild(n);
@@ -107,14 +275,33 @@
       <div class="lv">Lv ${q.lv}</div>
       <div>
         <h4>${q.title}</h4>
-        <p>${q.summary}</p>
-        <div class="tags">${q.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+        <div class="tagline">${q.tagline}</div>
+        <div class="save">&#9201; ${q.timeSaved}</div>
+        <div class="tools">${q.tools.map(t => `<span class="tool">${t}</span>`).join("")}</div>
       </div>`;
     li.addEventListener("click", () => selectQuest(i));
     list.appendChild(li);
   });
 
-  // ---------- rank codex ----------
+  // ---------- talk outline ----------
+  const talk = document.getElementById("talk-list");
+  QUESTS.forEach((q, i) => {
+    const li = document.createElement("li");
+    li.className = "talk-card" + (q.boss ? " boss" : "");
+    li.dataset.idx = String(i);
+    li.innerHTML = `
+      <span class="stop">STOP ${i + 1}/12</span>
+      <span class="lv-pill">Lv ${q.lv}</span>
+      <h4>${q.title}</h4>
+      <div class="tagline">${q.tagline}</div>
+      <div class="save">&#9201; ${q.timeSaved}</div>
+      <ul>${(q.talkingPoints || []).map(p => `<li>${p}</li>`).join("")}</ul>
+      <div class="tools">${q.tools.map(t => `<span class="tool">${t}</span>`).join("")}</div>`;
+    li.addEventListener("click", () => selectQuest(i));
+    talk.appendChild(li);
+  });
+
+  // ---------- ranks codex ----------
   const rankList = document.getElementById("ranks");
   RANKS.forEach((r, i) => {
     const li = document.createElement("li");
@@ -128,17 +315,10 @@
   });
 
   // ---------- state ----------
-  const state = {
-    level: 1,
-    selected: 0,
-  };
+  const state = { level: 1, selected: 0 };
 
   function rankFor(level) {
     return RANKS.find(r => level >= r.from && level <= r.to) || RANKS[RANKS.length - 1];
-  }
-
-  function expForLevel(level) {
-    return Math.floor(80 + level * 1.6);
   }
 
   // ---------- UI updates ----------
@@ -146,24 +326,33 @@
     lv = Math.max(1, Math.min(999, lv | 0));
     state.level = lv;
 
+    const o = outfitFor(lv);
+    buildMCChar(o);
+    document.getElementById("iso-hero").innerHTML = buildIsoHeroSVG(o);
+
     document.getElementById("level-num").textContent = lv;
     document.getElementById("rank-name").textContent = rankFor(lv).name;
 
-    const exp     = expForLevel(lv);
-    const expCap  = expForLevel(lv) + 100;
-    const expPct  = Math.round(100 * exp / expCap);
-    document.getElementById("exp-fill").style.width = expPct + "%";
-    document.getElementById("exp-text").textContent = `${exp} / ${expCap} EXP`;
+    // bars: show percent of progress through current rank tier
+    const r = rankFor(lv);
+    const span = (r.to - r.from + 1);
+    const pct  = Math.min(100, Math.round(100 * ((lv - r.from + 1) / span)));
+    document.getElementById("exp-fill").style.width = pct + "%";
+    document.getElementById("exp-text").textContent = `${pct}% to next rank`;
 
-    const hpMax   = 100 + lv * 2;
-    const mpMax   = 60  + lv * 1.2 | 0;
+    const energy = 80 + lv * 0.2 | 0;
+    const focus  = 60 + lv * 0.15 | 0;
     document.getElementById("hp-fill").style.width = "100%";
     document.getElementById("mp-fill").style.width = "100%";
-    document.getElementById("hp-text").textContent = `${hpMax} / ${hpMax} HP`;
-    document.getElementById("mp-text").textContent = `${mpMax} / ${mpMax} MP`;
+    document.getElementById("hp-text").textContent = `${energy} / ${energy} ENERGY`;
+    document.getElementById("mp-text").textContent = `${focus} / ${focus} FOCUS`;
 
     document.getElementById("lv-input").value  = lv;
     document.getElementById("lv-number").value = lv;
+
+    // inventory list
+    const invEl = document.getElementById("inventory");
+    invEl.innerHTML = o.inventory.map(s => `<li>${s}</li>`).join("");
 
     // node + quest lock states
     document.querySelectorAll(".node").forEach(n => {
@@ -175,37 +364,28 @@
       const q = QUESTS[+li.dataset.idx];
       li.classList.toggle("locked", lv < q.lv);
     });
-
-    // ranks codex highlight
     document.querySelectorAll(".rank").forEach(li => {
-      const r = RANKS[+li.dataset.idx];
-      li.classList.toggle("current", lv >= r.from && lv <= r.to);
-      li.classList.toggle("passed",  lv >  r.to);
+      const rr = RANKS[+li.dataset.idx];
+      li.classList.toggle("current", lv >= rr.from && lv <= rr.to);
+      li.classList.toggle("passed",  lv >  rr.to);
     });
 
-    // park hero on the nearest reached quest tile
+    // park hero on the furthest reached quest tile
     let target = QUESTS[0];
     for (const q of QUESTS) if (lv >= q.lv) target = q;
     moveHeroTo(target.map.x, target.map.y);
   }
 
   function moveHeroTo(x, y) {
-    isoHero.style.left = (x * TILE) + "px";
-    isoHero.style.top  = (y * TILE) + "px";
+    const h = document.getElementById("iso-hero");
+    h.style.left = (x * TILE) + "px";
+    h.style.top  = (y * TILE) + "px";
   }
 
-  // ---------- dialog typewriter ----------
-  let typeTimer = null;
-  function say(speaker, text) {
+  // ---------- dialog ----------
+  function say(speaker, html) {
     document.querySelector(".speaker").textContent = "▼ " + speaker;
-    const out = document.getElementById("dialog-text");
-    out.textContent = "";
-    if (typeTimer) clearInterval(typeTimer);
-    let i = 0;
-    typeTimer = setInterval(() => {
-      out.textContent += text[i++] || "";
-      if (i >= text.length) clearInterval(typeTimer);
-    }, 14);
+    document.getElementById("dialog-text").innerHTML = html;
   }
 
   // ---------- selection ----------
@@ -213,32 +393,32 @@
     state.selected = i;
     const q = QUESTS[i];
 
-    document.querySelectorAll(".quest").forEach(li => {
-      li.classList.toggle("active", +li.dataset.idx === i);
-    });
-    document.querySelectorAll(".node").forEach(n => {
-      n.classList.toggle("active", +n.dataset.idx === i);
-    });
+    document.querySelectorAll(".quest").forEach(li => li.classList.toggle("active", +li.dataset.idx === i));
+    document.querySelectorAll(".node").forEach(n  => n.classList.toggle("active", +n.dataset.idx === i));
+    document.querySelectorAll(".talk-card").forEach(c => c.classList.toggle("active", +c.dataset.idx === i));
 
     const status = state.level >= q.lv ? "AVAILABLE" : `LOCKED · need Lv ${q.lv}`;
-    const speaker = q.boss ? "FINAL BOSS" : "AI MENTOR";
-    const text =
-      `[Lv ${q.lv}] ${q.title}  —  ${status}\n` +
-      `${q.summary}\n` +
-      `Objective: ${q.objective}\n` +
-      `Reward: ${q.reward}`;
-    say(speaker, text);
+    const speaker = q.boss ? "FINAL STOP" : "AI MENTOR";
+    const tools = (q.tools || []).map(t => `<span class="d-tag">${t}</span>`).join(" ");
+    const points = (q.talkingPoints || []).map(p => `&#9656; ${p}`).join("\n");
+    const html =
+      `<span class="d-h">[Lv ${q.lv}] ${q.title}</span>  —  <em>${status}</em>\n` +
+      `<span class="d-h">${q.tagline}</span>\n` +
+      `${q.summary}\n\n` +
+      `<span class="d-h">What changes for you:</span> ${q.whatChanges}\n` +
+      `<span class="d-h">Time saved:</span> ${q.timeSaved}\n\n` +
+      `<span class="d-h">Try these tools:</span> ${tools}\n\n` +
+      `<span class="d-h">Talking points (${q.talkingPoints?.length || 0}):</span>\n${points}`;
+    say(speaker, html);
 
-    // also nudge the on-map hero toward the selected quest if reached
     if (state.level >= q.lv) moveHeroTo(q.map.x, q.map.y);
 
-    // scroll quest into view in the log
     const li = document.querySelector(`.quest[data-idx="${i}"]`);
     if (li) li.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   // ---------- inputs ----------
-  document.getElementById("lv-input").addEventListener("input", e => setLevel(+e.target.value));
+  document.getElementById("lv-input").addEventListener("input",  e => setLevel(+e.target.value));
   document.getElementById("lv-number").addEventListener("change", e => setLevel(+e.target.value));
 
   document.addEventListener("keydown", e => {
